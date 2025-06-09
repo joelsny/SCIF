@@ -192,9 +192,6 @@ public class TypeChecker {
             System.out.println(e.getMessage());
             return null;
         }
-//                }
-//            }
-//        }
 
         return roots;
     }
@@ -442,10 +439,6 @@ public class TypeChecker {
 
         for (String methodName : env.getMethodNameSet()) {
             if (methodName.equals(Utils.CONTRACT_KEYWORD)) continue;
-            // System.err.println("checking method: " + methodName);
-//            if (!methodName.equals("removeLiquidity")) {
-//                continue;
-//            }
             File outputFile = new File(logDir, SCIF.newFileName(methodName, "ifc"));
             List<Constraint> cons = new ArrayList<>();
             List<Constraint> trustCons = new ArrayList<>();
