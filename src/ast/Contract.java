@@ -454,23 +454,25 @@ public class Contract extends TopLayerNode {
             }
 
             for (ExceptionDef exp : exceptionDefs) {
-                // TODO steph: assert?
-                assert !nameSet.contains(exp.exceptionName) :
-                        "duplicate exception: " + exp.exceptionName;
+                if (nameSet.contains(exp.exceptionName)) {
+                    throw new SemanticException("duplicate exception: " + exp.exceptionName, exp.location);
+                }
                 nameSet.add(exp.exceptionName);
                 expDefs.put(exp.exceptionName, exp);
             }
 
             for (EventDef eventDef : eventDefs) {
-                // TODO steph: assert?
-                assert !nameSet.contains(eventDef.eventName) :
-                        "duplicate event: " + eventDef.eventName;
+                if (nameSet.contains(eventDef.eventName)) {
+                    throw new SemanticException("duplicate event: " + eventDef.eventName, eventDef.location);
+                }
                 nameSet.add(eventDef.eventName);
                 evDefs.put(eventDef.eventName, eventDef);
             }
 
             for (FunctionDef f : methodDeclarations) {
-                assert !nameSet.contains(f.name) : "duplicate method: " + f.name;
+                if (nameSet.contains(f.name)) {
+                    throw new SemanticException("duplicate method: " + f.name, f.location);
+                }
                 nameSet.add(f.name);
                 funcNames.put(f.name, f);
             }
@@ -528,7 +530,9 @@ public class Contract extends TopLayerNode {
             for (ExceptionDef exp : superContract.exceptionDefs) {
                 if (exp.isBuiltIn())
                     continue;
-                assert !nameSet.contains(exp.exceptionName) : exp.exceptionName;
+                if (nameSet.contains(exp.exceptionName)) {
+                    throw new SemanticException("duplicate exception: " + exp.exceptionName, exp.location);
+                }
                 newExpDefs.add(exp);
             }
             newExpDefs.addAll(exceptionDefs.subList(builtInIndex, exceptionDefs.size()));
@@ -544,8 +548,9 @@ public class Contract extends TopLayerNode {
             for (EventDef eventDef : superContract.eventDefs) {
                 if (eventDef.isBuiltIn())
                     continue;
-                // TODO: steph: assert?
-                assert !nameSet.contains(eventDef.eventName) : eventDef.eventName;
+                if (nameSet.contains(eventDef.eventName)) {
+                    throw new SemanticException("duplicate event: " + eventDef.eventName, eventDef.location);
+                }
                 newEvDefs.add(eventDef);
             }
             newEvDefs.addAll(eventDefs.subList(builtInIndex, eventDefs.size()));

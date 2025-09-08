@@ -247,7 +247,6 @@ nonterminal CallSpec transaction_spec;
 nonterminal java.util.Map<String, Expression> arg_spec;
 nonterminal List<EventDef> event_defs;
 nonterminal EventDef event_def;
-// nonterminal Object event_parameters, event_par_list;
 nonterminal Emit emit_stmt;
 
 precedence left EQUALGREATER;

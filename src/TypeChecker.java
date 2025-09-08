@@ -30,115 +30,20 @@ public class TypeChecker {
     }
 
     /*
-        parse all SCIF source files and store AST roots in roots.
-    */
-    public static List<SourceFile> buildRoots(List<File> inputFiles) throws IOException, SemanticException, Parser.SyntaxError {
-        List<SourceFile> roots = new ArrayList<>();
-
-        Queue<File> mentionedFiles = new ArrayDeque<>(inputFiles);
-        InheritGraph graph = new InheritGraph();
-        Map<String, List<SourceFile>> fileMap = new HashMap<>();
-        Set<String> includedFilePaths = inputFiles.stream().flatMap(file -> Stream.of(file.getAbsolutePath())).collect(
-                Collectors.toSet());
-        
-        // add all built-in source files
-        for (File builtinFile: Utils.BUILTIN_FILES) {
-            Symbol result = Parser.parse(builtinFile, null);//p.parse();
-            List<SourceFile> rootsFiles = (List<SourceFile>) result.value;
-            SourceFile root = (rootsFiles.get(0)).makeBuiltIn();
-            if (root instanceof ContractFile) {
-                ((ContractFile) root).getContract().clearExtends();
-            }
-            // TODO root.setName(inputFile.name());
-            List<String> sourceCode = Files.readAllLines(Paths.get(builtinFile.getAbsolutePath()),
-                    StandardCharsets.UTF_8);
-
-            // sourceCode is only used to show error msgs for SLC - should save all lines from the file path anyway
-            root.setSourceCode(sourceCode);
-            root.addBuiltIns();
-            roots.add(root);
-            assert root.ntcAddImportEdges(graph);
-            includedFilePaths.add(builtinFile.getAbsolutePath());
-            fileMap.put(builtinFile.getAbsolutePath(), new ArrayList<>(List.of(root)));
-        }
-        while (!mentionedFiles.isEmpty()) {
-            File file = mentionedFiles.poll();
-            Symbol result;
-            result = Parser.parse(file, null);
-            assert result != null;
-
-            List<SourceFile> rootsFiles = (List<SourceFile>) result.value;
-            assert !rootsFiles.isEmpty();
-
-            fileMap.put((rootsFiles.get(0)).getSourceFilePath(), rootsFiles);
-            // TODO root.setName(inputFile.name());
-            List<String> sourceCode = Files.readAllLines(Paths.get(file.getAbsolutePath()),
-                    StandardCharsets.UTF_8);
-            // sourceCode is only used to show error msgs for SLC - should save all lines from the file path anyway
-            for (SourceFile root : rootsFiles) {
-                root.setSourceCode(sourceCode);
-                root.addBuiltIns();
-                roots.add(root);
-                assert root.ntcAddImportEdges(graph);
-
-                for (String filePath : root.importPaths()) {
-                    // only those imported file paths != current file path
-                    if (!includedFilePaths.contains(filePath)) {
-                        mentionedFiles.add(new File(filePath));
-                        includedFilePaths.add(filePath);
-                    }
-                }
-            }
-        }
-
-        // TODO do we need to check if there's any non-existent contract name?
-
-        Map<String, List<TopLayerNode>> sourceFileMap = new HashMap<>(); // file path -> list of AST contract/interface
-
-        for (SourceFile root : roots) {
-            if (root instanceof ContractFile) {
-                sourceFileMap.computeIfAbsent(root.getSourceFilePath(), k -> new ArrayList<>()).add(((ContractFile) root).getContract());
-            } else if (root instanceof InterfaceFile) {
-                sourceFileMap.computeIfAbsent(root.getSourceFilePath(), k -> new ArrayList<>()).add(((InterfaceFile) root).getInterface());
-            } else {
-                assert false : root.getContractName();
-            }
-        }
-
-        List<SourceFile> toporder = new ArrayList<>();
-        // code-paste in a topological order
-        for (String x : graph.getTopologicalQueue()) {
-            List<SourceFile> rootsFile = fileMap.get(x);
-            if (rootsFile == null || rootsFile.isEmpty()) {
-                assert false;
-                return null;
-            }
-
-            for (SourceFile rt : rootsFile) {
-                toporder.add(rt);
-                rt.updateImports(fileMap);
-                rt.codePasteContract(x, sourceFileMap);
-            }
-        }
-
-        return toporder;
-    }
-
-    /*
         Given a list of SCIF source files, this method type-checks all code,
         ignoring information flow control.  It generates constraints in
         SHErrLoc format and put them in outputFile, then runs SHErrLoc to get
         error info.
      */
-    public static List<SourceFile> regularTypecheck(List<File> inputFiles, File logDir,
+    public static boolean regularTypecheck(List<SourceFile> roots, File logDir,
                                                     boolean DEBUG) throws IOException, SemanticException, Parser.SyntaxError {
         File outputFile = new File(logDir, SCIF.newFileName("ntc", "cons"));
         logger.trace("typecheck starts...");
 
         // roots = toporder;
-        List<SourceFile> roots;
-        roots = buildRoots(inputFiles);
-        if (roots == null) return roots;
+//        List<SourceFile> roots;
+//        roots = Preprocessor.preprocess(inputFiles);
+        if (roots == null) return false;
 
         // Add built-ins and Collect global info
         NTCEnv ntcEnv = new NTCEnv(null);
@@ -179,21 +84,24 @@ public class TypeChecker {
         if (!Utils.writeCons2File(ntcEnv.getTypeSet(), ntcEnv.getTypeRelationCons(),
                 cons,
                 outputFile, false, null)) {
-            return roots;
+//            return roots;
+            // TODO(steph) why return roots??
+            return false;
         }
         try {
             if (DEBUG) {
                 System.err.println("regular type-checking using SLC...");
             }
             if (!runSLC(ntcEnv.programMap(), outputFile.getAbsolutePath(), DEBUG)) {
-                return null;
+                return false;
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            return null;
+            return false;
         }
 
-        return roots;
+//        return roots;
+        return true;
     }
 
     public static boolean ifcTypecheck(List<SourceFile> roots, File logDir,
@@ -467,8 +375,8 @@ public class TypeChecker {
 //        logger.trace("running SLC");
 
 
-        String classDirectoryPath = new File(
-                SCIF.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getPath();
+//        String classDirectoryPath = new File(
+//                SCIF.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getPath();
         sherrloc.diagnostic.DiagnosticConstraintResult result = Utils.runSherrloc(outputFileName);
 //      System.err.println("runSLC: " + outputFileName + " " + result.success());
 //        System.err.println(Arrays.toString(Utils.runSLCCMD(classDirectoryPath, outputFileName)));

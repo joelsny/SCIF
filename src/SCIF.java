@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import ast.Type;
 import java_cup.runtime.ParserException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -71,7 +72,7 @@ public class SCIF implements Callable<Integer> {
     /**
      * Typecheck input code files, and return the manipulated AST.
      *
-     * @param outputFileNames
+     * @param logDirs
      * @return The manipulated AST.
      */
     private List<SourceFile> _typecheck(String[] logDirs)
@@ -86,26 +87,39 @@ public class SCIF implements Callable<Integer> {
             List<File> files = new ArrayList<>();
             for (File file : m_inputFiles) {
                 files.add(file);
-               }
+            }
+
             List<SourceFile> roots;
-            try {
-                roots = TypeChecker.regularTypecheck(files, logDir, m_debug);
-            } catch (Parser.SyntaxError e) {
-                return null;
-            }
-
-            boolean passNTC = true;
-            //if (!Utils.emptyFile(outputFileName))
-            //    passNTC = runSLC(outputFileName);
+//            try {
+            roots = Preprocessor.preprocess(files);
+//            } catch (Parser.SyntaxError e) {
+//                return null;
+//            }
             if (roots == null) {
-                passNTC = false;
-            }
-
-            if (!passNTC) {
                 return null;
             }
+
+//            try {
+            if (!TypeChecker.regularTypecheck(roots, logDir, m_debug)) {
+                return null;
+            }
+//            } catch (Parser.SyntaxError e) {
+//                return null;
+//            }
+//
+//            boolean passNTC = true;
+//            if (!Utils.emptyFile(outputFileName))
+//                passNTC = runSLC(outputFileName);
+//            if (roots == null) {
+//                passNTC = false;
+//            }
+//            if (!passNTC) {
+//                return null;
+//            }
             // System.out.println("["+ outputFileName + "]");
-            List<File> IFCConsFiles = new ArrayList<>();
+
+
+//            List<File> IFCConsFiles = new ArrayList<>();
 //        for (int i = 0; i < roots.size(); ++i) {
 //            File IFCConsFile;
 //            if (outputFileNames == null || outputFileNames.length <= i + 1) {
@@ -125,7 +139,10 @@ public class SCIF implements Callable<Integer> {
             // // logger.debug("running SHErrLoc...");
             // boolean passIFC = runSLC(outputFileName);
 
-            return (passNTC && passIFC) ? roots : null;
+//            return (passNTC && passIFC) ? roots : null;
+            return (passIFC) ? roots : null;
+        } catch (Parser.SyntaxError e) {
+            return null;
         } catch (SemanticException e) {
             System.err.println(e.getMessage());
             return List.of();

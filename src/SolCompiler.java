@@ -16,6 +16,7 @@ public class SolCompiler {
 
     public static void compile(List<SourceFile> roots, File outputFile) {
         // assuming the code typechecks, might need to deal with namespace when multi-contract
+
         // steph: invariant - all SourcesFile under roots are from same file path.
         logger.trace("compiling starts");
 

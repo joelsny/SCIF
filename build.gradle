@@ -29,7 +29,7 @@ sourceSets {
             srcDir "src"
         }
         java {
-            srcDirs = ['src', 'build/generated-src/cup', 'easyIO/src']
+            srcDirs = ['src', 'build/generated-src/cup']
         }
         resources {
             srcDirs = ['src/config', 'resources']

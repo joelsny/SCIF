@@ -1,3 +1,5 @@
+package parser;
+
 import java.io.*;
 import java_cup.runtime.*;
 import java.util.*;
@@ -6,37 +8,80 @@ import typecheck.sherrlocUtils.*;
 import com.owlike.genson.Genson;
 import com.owlike.genson.GensonBuilder;
 import typecheck.CodeLocation;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import typecheck.Utils;
 
 parser code {:
     //public boolean DEBUG = true;
-    protected static final Logger logger = LogManager.getLogger();
+    public boolean hasError = false;
     public static String filename;
 
-    public void syntax_error(Symbol cur_token) {
-        logger.error("Syntax error at (" + cur_token.left + ", " + cur_token.right + ")", cur_token);
-        report_error("Syntax error ", cur_token);
+    public static class SyntaxError extends Exception {
+      public String message;
+
+      public SyntaxError(String msg) {
+        message = msg;
+      }
+    }
+
+    @Override public void syntax_error(Symbol cur_token) {
+        report_error("Syntax error", cur_token);
+        report_expected_token_ids();
+    }
+    String getTokenName(int id) {
+        String name = Lexer.tokenNames.get(id);
+        if (name == null) return sym.terminalNames[id];
+        else return name;
+    }
+    @Override public void report_error(String message, Object cur_token) {
+        hasError = true;
+        if (cur_token instanceof Symbol s) {
+            String name = getTokenName(s.sym);
+            // filename is defined to be the absolute path
+            message = new File(filename).getName() + ":" + s.left + ":" + s.right + ": "
+                            + message + " at symbol '" + s.value + "';";
+        }
+        System.out.println(message);
+    }
+
+    @Override public void unrecovered_syntax_error(Symbol cur_token) throws SyntaxError {
+        throw new SyntaxError("Syntax error");
+    }
+    @Override public void report_expected_token_ids() {
+        List<Integer> ids = expected_token_ids();
+        if (ids.isEmpty()) return;
+        StringBuilder b = new StringBuilder();
+        b.append("  Expected: ");
+        boolean first = true;
+        for (int id : ids) {
+          if (!first) b.append(", ");
+          else first = false;
+          b.append(getTokenName(id));
+        }
+        System.out.println(b.toString());
+    }
+
+    @Override public Symbol parse() throws Exception {
+        Symbol result = super.parse();
+        if (hasError) {
+            throw new SyntaxError("Syntax error");
+        }
+        return result;
     }
 
     public void debuglog(String s) {
         // logger.debug(s);
     }
 
-    /*public Node<String> makeKeyword(Object kw) {
-        if (kw instanceof String)
-            return new Node<String>((String)kw, -1, -1);
-        Symbol tmp = (Symbol) kw;
-        return new Node<String>(tmp.toString(), tmp.left, tmp.right);
-    }*/
-
     public static void main(String args[]) {
         File inputFile = new File(args[0]);
-        parse(inputFile, null);
+        try {
+          parse(inputFile, null);
+        } catch (SyntaxError err) {
+          /* ignore */
+        }
     }
 
-    public static Symbol parse(File inputFile, File astFile) {
+    public static Symbol parse(File inputFile, File astFile) throws SyntaxError {
         Symbol rtn = null;
         try {
             filename = inputFile.getAbsolutePath();
@@ -48,16 +93,19 @@ parser code {:
             }
 
             Parser p = new Parser(lexer);
-            logger.trace("Parser init: " + filename);
 
-            rtn = p.parse();
-            logger.trace("Finish");
-
+            try {
+                rtn = p.parse();
+            } catch (Exception e) {
+                if (e instanceof SyntaxError se) throw se;
+                throw new Error("Unexpected exception from parser");
+            }
             if (astFile != null) {
                 System.setErr(System.err);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            System.err.println("File not found: " + e.getMessage());
+            return null;
         }
         return rtn;
     }
@@ -93,11 +141,14 @@ terminal CONSTRUCTOR;//, PERCENTEQUAL;
 terminal ASSUME;
 terminal REVERT;
 terminal WHILE, FOR;
-terminal NEW, STRUCT;
+terminal NEW, STRUCT, UNCHECKED, TRANSIENT;
+terminal EVENT, EMIT;
+terminal VAR;
 
-nonterminal SourceFile sourceCode;
+nonterminal List<SourceFile> sourceCode;
 nonterminal Interface interface;
-nonterminal SourceFile sourceFile;
+nonterminal List<SourceFile> sourceFile;
+nonterminal List<SourceFile> sourceFilesNoImport;
 nonterminal Set<String> ipt_stmts;
 // nonterminal List<Contract> contracts;
 nonterminal Contract contract;
@@ -128,6 +179,7 @@ nonterminal Statement assert_stmt;
 nonterminal CallStatement call_stmt;
 nonterminal If if_stmt;
 nonterminal Statement try_stmt, atomic_stmt;
+nonterminal Statement unchecked_stmt;
 nonterminal Statement while_stmt; //, for_stmt;
 //nonterminal List<Statement> iter_stmts;
 //nonterminal Statement iter_stmt, inc_stmt;
@@ -193,6 +245,10 @@ nonterminal Revert revert_stmt;
 nonterminal List<Name> name_list, name_list_oneplus;
 nonterminal CallSpec transaction_spec;
 nonterminal java.util.Map<String, Expression> arg_spec;
+nonterminal List<EventDef> event_defs;
+nonterminal EventDef event_def;
+// nonterminal Object event_parameters, event_par_list;
+nonterminal Emit emit_stmt;
 
 precedence left EQUALGREATER;
 precedence left OR;
@@ -214,29 +270,55 @@ sourceCode ::= sourceFile:a {: RESULT = a; :}
     ;:};
 
 sourceFile ::=
-    ipt_stmts:a contract:b {:
-        RESULT = new ContractFile(filename, a, b);
-        RESULT.setLoc(new CodeLocation(aleft, aright, filename));
+    ipt_stmts:a sourceFilesNoImport:b {:
+        b.forEach(file -> {
+            file.setIptContracts(a);
+        });
+        RESULT = b;
         // logger.debug(RESULT);
     :}
-    | contract:a {:
-        RESULT = new ContractFile(filename, a);
-        RESULT.setLoc(new CodeLocation(aleft, aright, filename));
+    | sourceFilesNoImport:b {:
+        RESULT = b;
         // logger.debug(RESULT);
     :}
-    | ipt_stmts:a interface:b {:
-        RESULT = new InterfaceFile(filename, a, b);
-        RESULT.setLoc(new CodeLocation(aleft, aright, filename));
+    // | error:err {:
+//    report_fatal_error("Syntax error in source file " + filename + "\n", err);
+    // :}
+    ;
+
+sourceFilesNoImport ::=
+    sourceFilesNoImport:a contract:b {:
+        ContractFile parsed = new ContractFile(filename, b);
+        parsed.setLoc(new CodeLocation(bleft, bright, filename));
+        a.add(parsed);
+        RESULT = a;
         // logger.debug(RESULT);
     :}
-    | interface:a {:
-        RESULT = new InterfaceFile(filename, a);
-        RESULT.setLoc(new CodeLocation(aleft, aright, filename));
+    | sourceFilesNoImport:a interface:b {:
+        InterfaceFile parsed = new InterfaceFile(filename, b);
+        parsed.setLoc(new CodeLocation(bleft, bright, filename));
+        a.add(parsed);
+        RESULT = a;
         // logger.debug(RESULT);
     :}
-    | error:err {:
-        report_fatal_error("Syntax error when parsing source file " + filename + "\n", err);
-    :};
+    | contract:b {:
+        ContractFile parsed = new ContractFile(filename, b);
+        parsed.setLoc(new CodeLocation(bleft, bright, filename));
+        RESULT = new ArrayList<SourceFile>();
+        RESULT.add(parsed);
+        // logger.debug(RESULT);
+    :}
+    | interface:b {:
+        InterfaceFile parsed = new InterfaceFile(filename, b);
+        parsed.setLoc(new CodeLocation(bleft, bright, filename));
+        RESULT = new ArrayList<SourceFile>();
+        RESULT.add(parsed);
+        // logger.debug(RESULT);
+    :}
+    // | error:err {:
+//        report_fatal_error("Syntax error in source file " + filename + "\n", err);
+    // :}
+    ;
 
 ipt_stmts ::=
     ipt_stmts:s  ipt_stmt:a {:
@@ -270,6 +352,7 @@ ipt_name ::= IMPORT:x STRING_LITERAL:a {:
 //        //RESULT.setLoc(new CodeLocation(aleft, aright, filename));
 //    :};
 
+
 contract ::=
     CONTRACT NAME: name contract_extends: c_extends
         LEFT_BRACE
@@ -277,12 +360,13 @@ contract ::=
             structDefs: s_decs
             state_var_decs: v_decs
             exp_defs: e_defs
+            event_defs: event_defs
             constructors: constructors
             func_defs: f_defs
         RIGHT_BRACE {:
         // TrustSetting t_setting = new TrustSetting();
         constructors.addAll(f_defs);
-        RESULT = new Contract((String) name, "", c_extends, t_setting, s_decs, v_decs, e_defs, constructors);
+        RESULT = new Contract((String) name, "", c_extends, t_setting, s_decs, v_decs, e_defs, event_defs, constructors);
         RESULT.setLoc(new CodeLocation(nameleft, nameright, filename));
     :}
     | CONTRACT NAME: name IMPLEMENTS NAME: supercontract contract_extends: c_extends
@@ -291,12 +375,13 @@ contract ::=
             structDefs: s_decs
             state_var_decs: v_decs
             exp_defs: e_defs
+            event_defs: event_defs
             constructors: constructors
             func_defs: f_defs
         RIGHT_BRACE {:
         // TrustSetting t_setting = new TrustSetting();
         constructors.addAll(f_defs);
-        RESULT = new Contract((String) name, (String) supercontract, c_extends, t_setting, s_decs, v_decs, e_defs, constructors);
+        RESULT = new Contract((String) name, (String) supercontract, c_extends, t_setting, s_decs, v_decs, e_defs, event_defs, constructors);
         RESULT.setLoc(new CodeLocation(nameleft, nameright, filename));
     :}
     | CONTRACT NAME: name contract_extends: c_extends
@@ -305,12 +390,13 @@ contract ::=
             structDefs: s_decs
             state_var_decs: v_decs
 //            exp_defs: e_defs
+            event_defs: event_defs
             constructors: constructors
             func_defs: f_defs
         RIGHT_BRACE {:
         // TrustSetting t_setting = new TrustSetting();
         constructors.addAll(f_defs);
-        RESULT = new Contract((String) name, "", c_extends, t_setting, s_decs, v_decs, new ArrayList<>(), constructors);
+        RESULT = new Contract((String) name, "", c_extends, t_setting, s_decs, v_decs, new ArrayList<>(), event_defs, constructors);
         RESULT.setLoc(new CodeLocation(nameleft, nameright, filename));
     :}
     | CONTRACT NAME: name IMPLEMENTS NAME: supercontract contract_extends: c_extends
@@ -319,12 +405,13 @@ contract ::=
             structDefs: s_decs
             state_var_decs: v_decs
 //            exp_defs: e_defs
+            event_defs: event_defs
             constructors: constructors
             func_defs: f_defs
         RIGHT_BRACE {:
         // TrustSetting t_setting = new TrustSetting();
         constructors.addAll(f_defs);
-        RESULT = new Contract((String) name, (String) supercontract, c_extends, t_setting, s_decs, v_decs, new ArrayList<>(), constructors);
+        RESULT = new Contract((String) name, (String) supercontract, c_extends, t_setting, s_decs, v_decs, new ArrayList<>(), event_defs, constructors);
         RESULT.setLoc(new CodeLocation(nameleft, nameright, filename));
     :};
 
@@ -423,14 +510,21 @@ state_var_dec ::=
     FINAL maybeLabeledType:t NAME:a SEMI {:
         Name name = new Name((String)a);
         name.setLoc(new CodeLocation(aleft, aright, filename));
-        StateVariableDeclaration rnt = new StateVariableDeclaration(name, t, null, false, true);
+        StateVariableDeclaration rnt = new StateVariableDeclaration(name, t, null, false, true, false);
+        RESULT = rnt;
+        RESULT.setLoc(new CodeLocation(aleft, aright, filename));
+    :}
+    | TRANSIENT maybeLabeledType:t NAME:a SEMI {:
+        Name name = new Name((String)a);
+        name.setLoc(new CodeLocation(aleft, aright, filename));
+        StateVariableDeclaration rnt = new StateVariableDeclaration(name, t, null, false, false, true);
         RESULT = rnt;
         RESULT.setLoc(new CodeLocation(aleft, aright, filename));
     :}
     | maybeLabeledType:t NAME:a SEMI {:
           Name name = new Name((String)a);
           name.setLoc(new CodeLocation(aleft, aright, filename));
-          StateVariableDeclaration rnt = new StateVariableDeclaration(name, t, null, false, false);
+          StateVariableDeclaration rnt = new StateVariableDeclaration(name, t, null, false, false, false);
           RESULT = rnt;
           RESULT.setLoc(new CodeLocation(aleft, aright, filename));
       :}
@@ -483,6 +577,25 @@ r_exp_defs ::=
         RESULT = list;
     :};
 
+event_defs ::=
+    event_defs:list event_def:eDef {:
+        list.add(eDef);
+        RESULT = list;
+    :}
+    | {:
+        List<EventDef> list = new ArrayList<>();
+        RESULT = list;
+    :}
+    ;
+
+event_def ::=
+    EVENT:e NAME:n parameters:para SEMI {:
+        EventDef eventDef = new EventDef((String) n, para);
+        eventDef.setLoc(new CodeLocation(eleft, eright, filename));
+        RESULT = eventDef;
+    :}
+    ;
+
 structDefs ::=
     structDefs:list structDef:sDef {:
         list.add(sDef);
@@ -526,7 +639,7 @@ plain_var_dec ::=
     type:t NAME:a SEMI {:
         Name name = new Name((String)a);
         name.setLoc(new CodeLocation(aleft, aright, filename));
-        StateVariableDeclaration rnt = new StateVariableDeclaration(name, new LabeledType(t, null), null, false, false);
+        StateVariableDeclaration rnt = new StateVariableDeclaration(name, new LabeledType(t, null), null, false, false, false);
         RESULT = rnt;
         RESULT.setLoc(new CodeLocation(aleft, aright, filename));
     :};
@@ -557,7 +670,7 @@ constructor ::=
 
 func_defs ::=
     funcdef:fDef func_defs:list {:
-        list.add(0, fDef);
+        if (fDef != null) list.add(0, fDef);
         RESULT = list;
     :}
     | {:
@@ -605,18 +718,20 @@ interface ::=
         LEFT_BRACE
             structDefs: s_defs
             exp_defs: e_defs
+            event_defs: event_defs
             funcSigs:a
         RIGHT_BRACE {:
-            RESULT = new Interface((String)name, c_extends, s_defs, e_defs, a);
+            RESULT = new Interface((String)name, c_extends, s_defs, e_defs, event_defs, a);
             RESULT.setLoc(new CodeLocation(ileft, iright, filename));
     :}
     | INTERFACE:i NAME:name contract_extends: c_extends
         LEFT_BRACE
             structDefs: s_defs
 //            exp_defs: e_defs
+            event_defs: event_defs
             funcSigs:a
         RIGHT_BRACE {:
-            RESULT = new Interface((String)name, c_extends, s_defs, new ArrayList<>(), a);
+            RESULT = new Interface((String)name, c_extends, s_defs, new ArrayList<>(), event_defs, a);
             RESULT.setLoc(new CodeLocation(ileft, iright, filename));
     :};
 
@@ -722,7 +837,7 @@ depMap ::=
 
 ifLabel ::= unitIfLabel:a {:
         RESULT = a;
-    :} 
+    :}
     | ifLabel:a MEET ifLabel:b {:
         RESULT = new ComplexIfLabel(a, IfOperator.MEET, b);
         RESULT.setLoc(new CodeLocation(aleft, aright, filename));
@@ -749,8 +864,9 @@ funcdef ::=
         RESULT = new FunctionDef(funcSig, d);
     :}
     | error:err {:
-        report_fatal_error("Syntax error when parsing a method", err);
-    :};
+//        report_fatal_error("Syntax error when parsing a method", err);
+    :}
+    ;
 
 type ::=
     nonarray_type:a {:
@@ -856,11 +972,11 @@ parameters ::=
         RESULT.setLoc(new CodeLocation(aleft, aright, filename));
     :};
 typedarglist ::=
-    probinittfpdef:a {:RESULT = a; :}
+    probinittfpdef:a {: RESULT = a; :}
     | typedarglist:list COMMA probinittfpdef:a {:
         list.merge(a);
         RESULT = list;
-    :}; 
+    :};
 probinittfpdef ::=
     tfpdef:a  {:
         List<Arg> args = new ArrayList<Arg>();
@@ -875,7 +991,7 @@ probinittfpdef ::=
 //        RESULT = new Arguments(args, defaults);
 //        RESULT.setLoc(new CodeLocation(aleft, aright, filename));
     :};
-tfpdef ::= 
+tfpdef ::=
      modifiers:m maybeLabeledType:b NAME:a{:
         String name = (String)a;
         RESULT = new Arg(name, b, false, m.contains(sym.FINAL));
@@ -966,8 +1082,10 @@ stmt ::= assign_stmt:a {: RESULT = a; :}
 //    | excborder_stmt:a {: RESULT = a; :}
     | try_stmt:a {: RESULT = a; :}
     | atomic_stmt:a {: RESULT = a; :}
+    | unchecked_stmt:a {: RESULT = a; :}
     | throw_stmt:a {: RESULT = a;:}
     | revert_stmt:a {: RESULT = a;:}
+    | emit_stmt:a {: RESULT = a; :}
 //    | endorse_stmt:a {:
 //        RESULT = a;
 //    :}
@@ -978,8 +1096,8 @@ stmt ::= assign_stmt:a {: RESULT = a; :}
         RESULT = a;
     :}
     | error:err SEMI {:
-        report_fatal_error("Statement syntax error when parsing source file " + filename + "\n", err);
-        RESULT = new ErrorStmt();
+        //report_error("Statement syntax error when parsing source file " + filename + "\n", err);
+        // syntax_error((Symbol) err);
     :}
     ;
 
@@ -990,6 +1108,17 @@ stmt ::= assign_stmt:a {: RESULT = a; :}
 //        RESULT.setLoc(new CodeLocation(xleft, xright, filename));
 //    :}
 //    ;
+
+emit_stmt ::=
+    EMIT:x call_expr:e SEMI {:
+        if (!(e instanceof Call)) {
+            return null;
+        }
+
+        RESULT = new Emit((Call)e);
+        RESULT.setLoc(new CodeLocation(xleft, xright, filename));
+    :}
+    ;
 
 endorseIf_stmt ::=
     ENDORSE:x LPAR name_list:exprList COMMA ifLabel:from RIGHT_ARROW ifLabel:to RPAR if_stmt:ifStmt {:
@@ -1220,7 +1349,12 @@ guard_block ::=
         RESULT = new GuardBlock(l, body, null);
         RESULT.setLoc(new CodeLocation(xleft, xright, filename));
     :};
-if_stmt ::= 
+unchecked_stmt ::=
+    UNCHECKED:x suite:body {:
+        RESULT = new UncheckedBlock(body);
+        RESULT.setLoc(new CodeLocation(xleft, xright, filename));
+    :};
+if_stmt ::=
     IF:x LPAR expr:a RPAR suite:b {:
         RESULT = new If(a, b);
         RESULT.setLoc(new CodeLocation(xleft, xright, filename));
@@ -1442,7 +1576,7 @@ comp_op ::= LESS {:RESULT = CompareOperator.Lt; :}
     | IS {:RESULT = CompareOperator.Is;:}
     | IS NOT{:RESULT = CompareOperator.IsNot;:} ;
 
-bit_op ::= 
+bit_op ::=
     VBAR:o {:RESULT = BinaryOperator.BitOr;:}
     | CIRCUMFLEX:o {:RESULT = BinaryOperator.BitXor;:}
     | AMPER:o {:RESULT = BinaryOperator.BitAnd;:}
@@ -1507,7 +1641,7 @@ constant ::=
     :}
     ;
 
-atom ::= 
+atom ::=
     /*LPAR:a RPAR {:
         RESULT = new Expression();
         RESULT.setLoc(new CodeLocation(aleft, aright, filename));
@@ -1531,7 +1665,7 @@ atom ::=
         RESULT = null; //TODO
     :}*/
 
-trailer ::= 
+trailer ::=
 //    LPAR:a RPAR {:
 //        //TODO: distinguish calls and initialization
 //        RESULT = new Call();
@@ -1568,7 +1702,7 @@ arglist ::=
 //    | exprlist_sub:a COMMA {:RESULT = a;:};
 //exprlist_sub ::=
 //    expr:a {:
-//        // logger.debug("Creating an expression list: " + a);
+//        logger.debug("Creating an expression list: " + a);
 //        List<Expression> rnt = new ArrayList<>();
 //        rnt.add(a);
 //        RESULT = rnt;

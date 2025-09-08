@@ -86,6 +86,7 @@ public class Call extends TrailerExpr {
                 Attribute att = (Attribute) value;
                 assert att.value instanceof Name : "at " + location.errString();
                 String varName = ((Name) att.value).id;
+                // System.out.println(varName);
                 funcName = att.attr.id;
                 Sym s = env.getCurSym(varName);
                 assert s != null: "variable not found: " + varName + " at " + location.errString();
@@ -145,6 +146,7 @@ public class Call extends TrailerExpr {
         } else {
             // a(b) - internal contract call
             funcName = ((Name) value).id;
+            // System.out.println(funcName);
             Sym s;
             if (funcName.equals(Utils.SUPER_KEYWORD)) {
                 if (env.superCalled())
@@ -527,7 +529,7 @@ public class Call extends TrailerExpr {
         Utils.contextFlow(env, psi.getNormalPath().c, endContext, location);
         psi.setNormalPath(endContext);
         Constraint ln_to_t = new Constraint(new Inequality(psi.getNormalPath().c.pc, ifNameFuncRtnValue),
-                env.hypothesis(), location, env.curContractSym().getName());
+                env.hypothesis(), location, env.curContractSym().getName(), "ln_to_t");
         env.cons.add(ln_to_t);
         return new ExpOutcome(ifNameFuncRtnValue, psi);
     }
