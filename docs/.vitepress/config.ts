@@ -1,21 +1,14 @@
-import { getHighlighter } from "shiki"
+import { createHighlighter } from "shiki"
 import { readFileSync } from "fs"
 import { defineConfig } from "vitepress"
 
 export async function highlighter() {
-    console.log('Current directory: '+ process.cwd())
-    const highlighter = await getHighlighter({})
-
     const scifGrammar = JSON.parse(readFileSync("./docs/.vitepress/c.tmLanguage.json", "utf-8"))
 
-    const scif = {
-        id: "scif",
-        scopeName: 'source.scif',
-        grammar: scifGrammar,
-        // aliases: ['scif'],
-    }
-    // Inject another grammar
-    highlighter.loadLanguage(scif)
+    const hl = await createHighlighter({
+        themes: ['github-dark', 'github-light'],
+        langs: ['bash', 'shell', 'javascript', 'typescript', scifGrammar],
+    })
 
     const preRE = /^<pre.*?>/
     const vueRE = /-vue$/
@@ -24,8 +17,8 @@ export async function highlighter() {
         const vPre = vueRE.test(lang) ? '' : 'v-pre'
         lang = lang.replace(vueRE, '')
 
-        return highlighter
-            .codeToHtml(str, { lang})
+        return hl
+            .codeToHtml(str, { lang, theme: 'github-dark' })
             .replace(preRE, `<pre ${vPre}>`)
     }
 }

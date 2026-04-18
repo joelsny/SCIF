@@ -8,7 +8,10 @@
   "devDependencies": {
     "@types/node": "^18.8.3",
     "vitepress": "^1.6.4",
-    "vue": "^3.2.39"
+    "vue": "^3.5.13"
+  },
+  "resolutions": {
+    "vite": "^6.4.2"
   },
   "scripts": {
     "docs:dev": "vitepress dev docs",
