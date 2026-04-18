@@ -56,7 +56,7 @@ public class TestRegularTypechecking {
         try {
             List<SourceFile> roots = Preprocessor.preprocess(files);
             assertNotNull(roots);
-            assert (TypeChecker.regularTypecheck(roots, logDir, m_debug));
+            assert (TypeChecker.regularTypecheck(roots, m_debug));
         } catch (Exception e) {
             e.printStackTrace();
             assert false;
@@ -89,7 +89,7 @@ public class TestRegularTypechecking {
         files.add(new File(input.getFile()));
         try {
             List<SourceFile> roots = Preprocessor.preprocess(files);
-            assert (roots == null || !TypeChecker.regularTypecheck(roots, logDir, m_debug));
+            assert (roots == null || !TypeChecker.regularTypecheck(roots, m_debug));
         } catch (AssertionError e) {
             e.printStackTrace();
             assert true;

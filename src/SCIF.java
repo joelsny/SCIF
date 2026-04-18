@@ -100,7 +100,7 @@ public class SCIF implements Callable<Integer> {
             }
 
 //            try {
-            if (!TypeChecker.regularTypecheck(roots, logDir, m_debug)) {
+            if (!TypeChecker.regularTypecheck(roots, m_debug)) {
                 return null;
             }
 //            } catch (Parser.SyntaxError e) {
@@ -133,7 +133,7 @@ public class SCIF implements Callable<Integer> {
 //        System.out.println("\nInformation Flow Type Checking:");
             boolean passIFC = false;
 
-            passIFC = TypeChecker.ifcTypecheck(roots, logDir, m_debug);
+            passIFC = TypeChecker.ifcTypecheck(roots, m_debug);
 
             // System.out.println("["+ outputFileName + "]" + "Information Flow Typechecking finished");
             // // logger.debug("running SHErrLoc...");

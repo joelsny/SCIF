@@ -5,12 +5,12 @@ import typecheck.Utils;
 
 public class Constraint {
     // names are unique strings
-    final Inequality inequality;
-    final Hypothesis hypothesis;
-    final Position position;
+    public final Inequality inequality;
+    public final Hypothesis hypothesis;
+    public final Position position;
     final String contractName;
-    final String explanation;
-    final int weight;
+    public final String explanation;
+    public final int weight;
 
     static final int WEIGHT1 = 5;
     static final int WEIGHT2 = 1;

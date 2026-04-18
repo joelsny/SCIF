@@ -12,8 +12,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import sherrloc.constraint.ast.Constructor;
 import sherrloc.constraint.ast.Hypothesis;
+import sherrloc.diagnostic.ConstraintCheck;
 import sherrloc.diagnostic.DiagnosticOptions;
 import sherrloc.diagnostic.ErrorDiagnosis;
+import sherrloc.diagnostic.SherrlocDiagnoser;
 import sherrloc.diagnostic.explanation.Entity;
 import sherrloc.diagnostic.explanation.Explanation;
 import sherrloc.graph.Variance;
@@ -244,9 +246,13 @@ public class Utils {
         // logger.debug("runSherrloc()...");
         String[] args = new String[]{"-c", consFilePath};
         DiagnosticOptions options = new DiagnosticOptions(args);
-        ErrorDiagnosis ana = ErrorDiagnosis.getAnalysisInstance(options);
 
-        sherrloc.diagnostic.DiagnosticConstraintResult result = ana.getConstraintResult();
+
+        ConstraintCheck ana = ConstraintCheck.getAnalysisInstance(options); // TODO swithcb ack after
+        ErrorDiagnosis ana2 = ErrorDiagnosis.getAnalysisInstance(options);
+
+        System.out.println("HEIII");
+        sherrloc.diagnostic.DiagnosticConstraintResult result = ana2.getConstraintResult();
         return result;
 
         //sherrloc.diagnostic.ErrorDiagnosis diagnosis = new sherrloc.diagnostic.ErrorDiagnosis();
@@ -318,79 +324,71 @@ public class Utils {
         }
     }
 
-    public static boolean writeCons2File(Set<? extends Sym> constructors, List<Constraint> assumptions,
-                                         List<Constraint> constraints, File outputFile, boolean isIFC, InterfaceSym contractSym) {
-        try {
-            // transform every "this" to "contractName.this"
-            BufferedWriter consFile = new BufferedWriter(new FileWriter(outputFile));
-            if (constraints.size() == 0) {
-                return false;
-            }
-            // logger.debug("Writing the constraints of size {}", constraints.size());
-            //System.err.println("Writing the constraints of size " + env.cons.size());
-//            VarSym bot = new VarSym();
-//            if (!constructors.contains("BOT") && isIFC) {
-//                constructors.add("BOT");
-//            }
-//            if (!constructors.contains("TOP") && isIFC) {
-//                constructors.add("TOP");
-//            }
-            /*if (!constructors.contains("this") && isIFC) {
-                constructors.add("this");
-            }*/
+    public static SherrlocDiagnoser createDiagnoser(Set<? extends Sym> constructors, List<Constraint> assumptions,
+            List<Constraint> constraints, boolean isIFC, InterfaceSym contractSym) {
 
-            Sym bot = null, top = null;
-            if (!constructors.isEmpty()) {
-                for (Sym principal : constructors) {
-                    if (principal.getName().equals(LABEL_BOTTOM)) {
-                        bot = principal;
-                    }
-                    if (principal.getName().equals(LABEL_TOP)) {
-                        top = principal;
-                    }
-                    consFile.write("CONSTRUCTOR " + principal.toSHErrLocFmt() + " 0\n");
-                }
-            }
-            if (!assumptions.isEmpty() || isIFC) {
-                consFile.write("%%\n");
-                assert bot != null;
-                assert top != null;
-                if (isIFC) {
-                    for (Sym x : constructors) {
-                        if (!x.equals(bot) && !x.equals(top)) {
-                            consFile.write(bot.toSHErrLocFmt() + " >= " + x.toSHErrLocFmt() + ";" + "\n");
-                        }
-                        if (!x.equals(top)) {
-                            consFile.write(top.toSHErrLocFmt() + " <= " + x.toSHErrLocFmt() + ";" + "\n");
-                        }
-                    }
-                    consFile.write(top.toSHErrLocFmt() + " == " + contractSym.thisSym().toSHErrLocFmt() + ";\n");
-                }
-//                for (Constraint con : assumptions) {
-//                    consFile.write(con.toSherrlocFmt(false) + "\n");
-//                }
-                consFile.write("%%\n");
-                for (Constraint con : assumptions) {
-                    consFile.write(con.toSherrlocFmt(true) + "\n");
-                }
-            } else {
-                consFile.write("\n");
-            }
-            if (!constraints.isEmpty()) {
-                for (Constraint con : constraints) {
-                    consFile.write(con.toSherrlocFmt(true) + "\n");
-                }
-            }
-            consFile.close();
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            return false;
+        SherrlocDiagnoser diagnoser = new SherrlocDiagnoser(DiagnosticOptions.Mode.CONS, true, false);
+
+        if (constraints.size() == 0) {
+            return diagnoser;
         }
-        return true;
+        
+        Sym bot = null, top = null;
+        if (!constructors.isEmpty()) {
+            for (Sym principal : constructors) {
+                if (principal.getName().equals(LABEL_BOTTOM)) {
+                    bot = principal;
+                }
+                if (principal.getName().equals(LABEL_TOP)) {
+                    top = principal;
+                }
+                diagnoser.defineConstructor(principal.toSHErrLocFmt(), 0);
+            }
+        }
+
+        if (!assumptions.isEmpty() || isIFC) {
+            assert bot != null;
+            assert top != null;
+            if (isIFC) {
+                for (Sym x : constructors) {
+                    if (!x.equals(bot) && !x.equals(top)) {
+                        diagnoser.addAssumedInequality(diagnoser.createGreaterThanConstraint(
+                                diagnoser.createElement(bot.toSHErrLocFmt(), sherrloc.constraint.ast.Position.EmptyPosition()),
+                                diagnoser.createElement(x.toSHErrLocFmt(), sherrloc.constraint.ast.Position.EmptyPosition())));
+                    }
+                    if (!x.equals(top)) {
+                        diagnoser.addAssumedInequality(diagnoser.createLessThanConstraint(
+                                diagnoser.createElement(top.toSHErrLocFmt(), sherrloc.constraint.ast.Position.EmptyPosition()),
+                                diagnoser.createElement(x.toSHErrLocFmt(), sherrloc.constraint.ast.Position.EmptyPosition())));
+                    }
+                }
+                diagnoser.addAssumedInequality(diagnoser.createEqualityConstraint(
+                        diagnoser.createElement(top.toSHErrLocFmt(), sherrloc.constraint.ast.Position.EmptyPosition()),
+                        diagnoser.createElement(contractSym.thisSym().toSHErrLocFmt(), sherrloc.constraint.ast.Position.EmptyPosition())));
+            }
+        }
+
+        for (Constraint con : assumptions) {
+            if (con.inequality != null) {
+                diagnoser.addConstraint(con.inequality.toSherrlocInequality(diagnoser),
+                        con.hypothesis.toSherrlocHypothesis(diagnoser).getInequalities(),
+                        con.position.toSherrlocPosition(diagnoser, con.explanation, con.weight));
+            }
+        }
+
+        for (Constraint con : constraints) {
+            if (con.inequality != null) {
+                diagnoser.addConstraint(con.inequality.toSherrlocInequality(diagnoser),
+                        con.hypothesis.toSherrlocHypothesis(diagnoser).getInequalities(),
+                        con.position.toSherrlocPosition(diagnoser, con.explanation, con.weight));
+            }
+        }
+
+        return diagnoser;
     }
 
     public static boolean SLCinput(HashSet<String> constructors, ArrayList<Constraint> assumptions,
-                                   ArrayList<Constraint> constraints, boolean isIFC) {
+            ArrayList<Constraint> constraints, boolean isIFC) {
         try {
             sherrloc.constraint.ast.Hypothesis hypothesis = new Hypothesis();
             ArrayList<sherrloc.constraint.ast.Axiom> axioms = new ArrayList<>();
@@ -503,7 +501,7 @@ public class Utils {
     }
 
     public static boolean arrayExpressionTypeMatch(ArrayList<Expression> x,
-                                                   ArrayList<Expression> y) {
+            ArrayList<Expression> y) {
 
         if (!(x == null && y == null)) {
             if (x == null || y == null || x.size() != y.size()) {
@@ -537,7 +535,7 @@ public class Utils {
     }
 
     public static String translateSLCSuggestion(HashMap<String, List<SourceFile>> programMap, String s,
-                                                boolean DEBUG) {
+            boolean DEBUG) {
         if (s.charAt(0) != '-') {
             return null;
         }
@@ -594,7 +592,7 @@ public class Utils {
     }
 
     public static String SLCSuggestionToString(Map<String, List<SourceFile>> programMap,
-                                               sherrloc.diagnostic.explanation.Explanation exp, boolean DEBUG) {
+            sherrloc.diagnostic.explanation.Explanation exp, boolean DEBUG) {
         String s = exp.toConsoleStringWithExp();
         if (DEBUG) {
             System.err.println(s + "#" + exp.getWeight());
@@ -682,7 +680,7 @@ public class Utils {
     }
 
     public static void contextFlow(VisitEnv env, Context outContext, Context endContext,
-                                   CodeLocation location) {
+            CodeLocation location) {
         env.addTrustConstraint(new Constraint(new Inequality(outContext.lambda, endContext.lambda),
                 env.hypothesis(), location, env.curContractSym().getName(),
                 "actually maintained lock of final sub-statement must flow to that of parent statement"));
@@ -865,8 +863,8 @@ public class Utils {
     }
 
     /**
-        Generate constraints for s.
-        If s is not the last op, prepare and generate the input context for the next op.
+     Generate constraints for s.
+     If s is not the last op, prepare and generate the input context for the next op.
      */
     public static Context genNewContextAndConstraints(VisitEnv env, boolean tail_position, Context c, String prevLambda, String newPc, CodeLocation location) {
         env.cons.add(new Constraint(new Inequality(prevLambda, c.lambda), env.hypothesis(), location, env.curContractSym().getName(),

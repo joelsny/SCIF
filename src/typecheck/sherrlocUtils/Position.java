@@ -1,5 +1,6 @@
 package typecheck.sherrlocUtils;
 
+import sherrloc.diagnostic.SherrlocDiagnoser;
 import typecheck.CodeLocation;
 import typecheck.Utils;
 
@@ -25,7 +26,7 @@ public class Position {
 
         String rtn = "[";
         //if (!snippet.equals("")) {
-            rtn += "\"" + explanation + "\": ";
+        rtn += "\"" + explanation + "\": ";
         //}
 
         rtn += beginLineNo + "," + beginColNo + "-" + endLineNo + "," + endColNo;
@@ -35,6 +36,10 @@ public class Position {
 
         // assert !explanation.startsWith(Utils.ERROR_MESSAGE_LOCK_IN_NONLAST_OPERATION) || weight == 5 : rtn;
         return rtn;
+    }
+
+    public sherrloc.constraint.ast.Position toSherrlocPosition(SherrlocDiagnoser diagnoser, String explanation, int weight) {
+        return diagnoser.createPosition(explanation, fileName, weight, beginLineNo, beginColNo, endLineNo, endColNo);
     }
 
 }

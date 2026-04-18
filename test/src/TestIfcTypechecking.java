@@ -49,7 +49,7 @@ public class TestIfcTypechecking {
         try {
             List<SourceFile> roots = Preprocessor.preprocess(files);
             assertNotNull(roots);
-            assert (TypeChecker.regularTypecheck(roots, logDir, m_debug));
+            assert (TypeChecker.regularTypecheck(roots, m_debug));
 
             // System.out.println("["+ outputFileName + "]");
             //        ArrayList<File> ifcConsFiles = new ArrayList<>();
@@ -61,7 +61,7 @@ public class TestIfcTypechecking {
 
             System.out.println("\nInformation Flow Typechecking:");
 
-            assert (TypeChecker.ifcTypecheck(roots, logDir, m_debug));
+            assert (TypeChecker.ifcTypecheck(roots, m_debug));
             // System.out.println("["+ outputFileName + "]" + "Information Flow Typechecking finished");
             // logger.debug("running SHErrLoc...");
             // boolean passIFC = runSLC(outputFileName);
@@ -97,7 +97,7 @@ public class TestIfcTypechecking {
         try {
             List<SourceFile> roots = Preprocessor.preprocess(files);
             assertNotNull(roots);
-            assert (TypeChecker.regularTypecheck(roots, logDir, m_debug));
+            assert (TypeChecker.regularTypecheck(roots, m_debug));
 
             // System.out.println("["+ outputFileName + "]");
             //        ArrayList<File> ifcConsFiles = new ArrayList<>();
@@ -109,7 +109,7 @@ public class TestIfcTypechecking {
 
             System.out.println("\nInformation Flow Typechecking:");
 
-            assert (!TypeChecker.ifcTypecheck(roots, logDir, m_debug));
+            assert (!TypeChecker.ifcTypecheck(roots, m_debug));
             // System.out.println("["+ outputFileName + "]" + "Information Flow Typechecking finished");
             // logger.debug("running SHErrLoc...");
             // boolean passIFC = runSLC(outputFileName);

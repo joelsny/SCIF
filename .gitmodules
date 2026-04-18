@@ -1,4 +1,4 @@
 [submodule "sherrloc"]
 	path = sherrloc
 	url = https://github.com/andrewcmyers/sherrloc.git
-	branch = scif
+	branch = typecheck

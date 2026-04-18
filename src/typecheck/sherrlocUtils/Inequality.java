@@ -1,6 +1,9 @@
 package typecheck.sherrlocUtils;
 
 import ast.CompareOperator;
+import sherrloc.diagnostic.SherrlocDiagnoser;
+
+import java.util.List;
 
 // a <= b means a flows to b
 // that is, a >= b in terms of integrity level
@@ -48,8 +51,21 @@ public class Inequality {
         } else if (relation == Relation.GEQ) {
             return lhs + " >= " + rhs;
         } else {
-            //TODO: error
+            //TODO: error   
             return "";
+        }
+    }
+
+    public sherrloc.constraint.ast.Inequality toSherrlocInequality(SherrlocDiagnoser diagnoser) {
+        var e = diagnoser.createElement(lhs, sherrloc.constraint.ast.Position.EmptyPosition());
+        var o = diagnoser.createElement(rhs, sherrloc.constraint.ast.Position.EmptyPosition());
+
+        if (relation == Relation.EQ) {
+            return diagnoser.createEqualityConstraint(e, o);
+        } else if (relation == Relation.LEQ) {
+            return diagnoser.createLessThanConstraint(e, o);
+        } else {
+            return diagnoser.createGreaterThanConstraint(e, o);
         }
     }
 }

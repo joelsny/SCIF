@@ -3,6 +3,7 @@ package typecheck.sherrlocUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
+import sherrloc.diagnostic.SherrlocDiagnoser;
 
 public class Hypothesis {
     Stack<Inequality> inequalities;
@@ -58,5 +59,13 @@ public class Hypothesis {
 
     public boolean empty() {
         return inequalities.isEmpty();
+    }
+
+    public sherrloc.constraint.ast.Hypothesis toSherrlocHypothesis(SherrlocDiagnoser diagnoser) {
+        sherrloc.constraint.ast.Hypothesis hypothesis = new sherrloc.constraint.ast.Hypothesis();
+        for (Inequality inequality : inequalities) {
+            hypothesis.addInequality(inequality.toSherrlocInequality(diagnoser));
+        }
+        return hypothesis;
     }
 }
