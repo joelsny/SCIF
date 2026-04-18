@@ -1,13 +1,12 @@
 plugins {
     id 'java'
     id "org.xbib.gradle.plugin.jflex" version "1.6.0" // a plugin for building a lexer using jflex
-    id "cup.gradle.cup-gradle-plugin" version "2.0" // building a parser using cup
     id "idea"
     id 'application'
 }
 
-version '0.5.0'
-group 'apl'
+version = '0.5.0'
+group = 'apl'
 
 java {
     toolchain {
@@ -45,9 +44,43 @@ sourceSets {
     }
 }
 
-cup {
-    sourceDir = "src"
-    args = ["-expect", "1000", "-interface", "-parser", "Parser"]
+// Custom CUP task using Cornell CUP from lib/java_cup.jar
+abstract class CupTask extends DefaultTask {
+    @Inject
+    abstract ExecOperations getExecOps()
+
+    @Inject
+    abstract ObjectFactory getObjectFactory()
+
+    @InputFiles
+    FileTree cupFiles
+
+    @OutputDirectory
+    File cupOutput
+
+    @InputFile
+    File cupJar
+
+    @TaskAction
+    void runCup() {
+        cupOutput.mkdirs()
+        def cupClasspath = objectFactory.fileCollection().from(cupJar)
+        cupFiles.each { cupFile ->
+            execOps.javaexec {
+                mainClass = "java_cup.Main"
+                classpath = cupClasspath
+                args = ["-expect", "1000", "-interface", "-parser", "Parser",
+                        "-destdir", cupOutput.absolutePath,
+                        cupFile.absolutePath]
+            }
+        }
+    }
+}
+
+tasks.register("cup", CupTask) {
+    cupFiles = fileTree("src") { include "*.cup" }
+    cupOutput = file("build/generated-src/cup")
+    cupJar = file("lib/java_cup.jar")
 }
 
 idea {
@@ -57,7 +90,7 @@ idea {
 }
 
 compileJava.configure {
-    dependsOn("slc-jar")
+    dependsOn("cup", "slc-jar")
 }
 
 def fatJar = tasks.register("fatJar", Jar) {
@@ -88,8 +121,8 @@ test {
   }
 }
 
-artifacts {
-    archives fatJar
+tasks.named("assemble") {
+    dependsOn(fatJar)
 }
 
 configurations {
@@ -102,7 +135,7 @@ configurations {
 
 dependencies {
     priority "de.jflex:jflex:1.8.2"
-    priority 'de.jflex:cup-parent:11b-20160615'
+    priority files('lib/java_cup.jar')
     implementation 'org.apache.logging.log4j:log4j-core:2.12.1'
     implementation 'com.owlike:genson:1.5'
     implementation "info.picocli:picocli:4.0.0"
@@ -110,6 +143,7 @@ dependencies {
     implementation 'org.junit.jupiter:junit-jupiter:5.7.0'
     testImplementation "org.junit.jupiter:junit-jupiter-api:5.9.0"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.9.0"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 }
 
 def dummyOutputStream = new OutputStream() {
