@@ -78,7 +78,7 @@ abstract class CupTask extends DefaultTask {
 }
 
 tasks.register("cup", CupTask) {
-    cupFiles = fileTree("src") { include "*.cup" }
+    cupFiles = fileTree("src") { include "SCIF.cup" }
     cupOutput = file("build/generated-src/cup")
     cupJar = file("lib/java_cup.jar")
 }
