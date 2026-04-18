@@ -1,8 +1,8 @@
-import { createHighlighter } from "shiki"
 import { readFileSync } from "fs"
 import { defineConfig } from "vitepress"
 
 export async function highlighter() {
+    const { createHighlighter } = await import("shiki")
     const scifGrammar = JSON.parse(readFileSync("./docs/.vitepress/c.tmLanguage.json", "utf-8"))
 
     const hl = await createHighlighter({
