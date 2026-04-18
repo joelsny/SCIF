@@ -241,61 +241,6 @@ public class Utils {
         return funcName + "." + name + ".lbl";
     }
 
-    public static sherrloc.diagnostic.DiagnosticConstraintResult runSherrloc(String consFilePath)
-            throws Exception {
-        // logger.debug("runSherrloc()...");
-        String[] args = new String[]{"-c", consFilePath};
-        DiagnosticOptions options = new DiagnosticOptions(args);
-
-
-        ConstraintCheck ana = ConstraintCheck.getAnalysisInstance(options); // TODO swithcb ack after
-        ErrorDiagnosis ana2 = ErrorDiagnosis.getAnalysisInstance(options);
-
-        System.out.println("HEIII");
-        sherrloc.diagnostic.DiagnosticConstraintResult result = ana2.getConstraintResult();
-        return result;
-
-        //sherrloc.diagnostic.ErrorDiagnosis diagnosis = new sherrloc.diagnostic.ErrorDiagnosis();
-//        String[] command = new String[] {"bash", "-c", path + "./sherrloc/sherrloc -c " + consFilePath};
-//        ProcessBuilder pb = new ProcessBuilder(command);
-//        pb.inheritIO();
-//        Process p = pb.start();
-//        BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-//        ArrayList<String> list = new ArrayList<>();
-//        String tmp;
-//        while ((tmp = br.readLine()) != null) {
-//            list.add(tmp);
-//            //System.err.println(tmp);
-//        }
-//        p.waitFor();
-//        // logger.debug("finished run SLC, collecting output...");
-//        p.destroy();
-//        br.close();
-//        return list.toArray(new String[0]);
-    }
-    public static String[] runSLCCMD(String path, String consFilePath)
-            throws Exception {
-
-//        sherrloc.diagnostic.ErrorDiagnosis diagnosis = new sherrloc.diagnostic.ErrorDiagnosis();
-        String[] command = new String[] {"bash", "-c", path + "/../../../../sherrloc/sherrloc -c " + consFilePath};
-        System.err.println(Arrays.toString(command));
-        ProcessBuilder pb = new ProcessBuilder(command);
-        pb.inheritIO();
-        Process p = pb.start();
-        BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        ArrayList<String> list = new ArrayList<>();
-        String tmp;
-        while ((tmp = br.readLine()) != null) {
-            list.add(tmp);
-            //System.err.println(tmp);
-        }
-        p.waitFor();
-        // logger.debug("finished run SLC, collecting output...");
-        p.destroy();
-        br.close();
-        return list.toArray(new String[0]);
-    }
-
     public static String joinLabels(String lhs, String rhs) {
         return "(" + lhs + " ⊔ " + rhs + ")";
     }
