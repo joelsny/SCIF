@@ -1,4 +1,4 @@
-import "file4.scif";
+import "import4.scif";
 
 interface C {
     @public void car{sender->sender;this}();

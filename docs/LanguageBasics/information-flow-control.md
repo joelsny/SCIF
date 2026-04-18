@@ -4,7 +4,7 @@ SCIF provides the ability to label information manipulated by programs with secu
 
 ## Principals
 
-A principal is an entity that represents some power to change certain aspects of the program. In SCIF, a principal can either be an *address*, representing an on-chain account, or a unique identifier that are defined by the programmer and only carries meaning within the scope of the current contract.
+A principal is an entity that represents some power to change certain aspects of the program. In SCIF, a principal can either be an *address*, representing an on-chain account, or a unique identifier that are defined by the programmer and only carries meaning within the scope of the current contract, such as `{this}`, `{sender}`, `{any}`. 
 
 ## Trust relationships
 
@@ -26,9 +26,9 @@ Alice == Bob
 
 ## Labels
 
-In information flow control, integrity and confidentiality are well-known duals. In SCIF, we only focus on the integrity because most smart contracts are currently running on public blockchains, where anyone can see anything of a smart contract.
+In information flow control, integrity and confidentiality are well-known duals. In SCIF, we only focus on integrity because most smart contracts are currently running on public blockchains, where anyone can see all states of a smart contract.
 
-In SCIF, an intergity policy is expressed as labels attached to code.
+In SCIF, an integrity policy is expressed as labels attached to code.
 
 Here is a quick example:
 
@@ -39,4 +39,4 @@ uint{owner} trustedCounter;
 
 `trustedCounter` is labeled as `owner`, meaning that the integrity level of `trustedCounter` is `owner`. In other words, only principals trusted by address `owner` can influence its value directly or indirectly.
 
-A label can be as simple as one single principal. It can also be a complicated combination of multiple principals. See later sections for details.
+A label can be as simple as a single principal. It can also be a complicated combination of multiple principals. See later sections for details.

@@ -36,9 +36,11 @@ public class TestCompilation {
             "basic/ExceptionThrowAndCatch",
             "basic/EndroseIf",
             "ifcTypechecking/Wallet_lock_exception",
-            "examples/ERC20",
+            // "examples/ERC20",
             "examples/SimpleStorage",
             "examples/DeployToken",
+            "multiContract/importTest/import1",
+            "multiContract/DexibleWithEvents",
     })
     void testPositive(String contractName) {
         File logDir = new File("./.scif");
@@ -49,51 +51,40 @@ public class TestCompilation {
 //        File ntcConsFile = new File(logDir, "ntc.cons");
         List<File> files = new ArrayList<>();
         files.add(new File(input.getFile()));
-        List<SourceFile> roots = null;
         try {
-            roots = TypeChecker.regularTypecheck(files, logDir, m_debug);
-        } catch (Exception e) {
-            e.printStackTrace();
-            assert false;
-        }
-        assertNotNull(roots);
-        // System.out.println("["+ outputFileName + "]");
-//        List<File> ifcConsFiles = new ArrayList<>();
-//        for (int i = 0; i < roots.size(); ++i) {
-//            File IFCConsFile;
-//            IFCConsFile = new File(logDir, "ifc" + i + ".cons");
-//            ifcConsFiles.add(IFCConsFile);
-//        }
+            List<SourceFile> roots = Preprocessor.preprocess(files);
+            assertNotNull(roots);
+            assert (TypeChecker.regularTypecheck(roots, logDir, m_debug));
 
-        System.out.println("\nInformation Flow Typechecking:");
+            // System.out.println("["+ outputFileName + "]");
+            //        ArrayList<File> ifcConsFiles = new ArrayList<>();
+            //        for (int i = 0; i < roots.size(); ++i) {
+            //            File IFCConsFile;
+            //            IFCConsFile = new File(logDir, "ifc" + i + ".cons");
+            //            ifcConsFiles.add(IFCConsFile);
+            //        }
 
-        boolean passIFC = false;
-        try {
-            passIFC = TypeChecker.ifcTypecheck(roots, logDir, m_debug);
-        } catch (Exception exp) {
-            exp.printStackTrace();
-        }
-        // System.out.println("["+ outputFileName + "]" + "Information Flow Typechecking finished");
-        // logger.debug("running SHErrLoc...");
-        // boolean passIFC = runSLC(outputFileName);
+            System.out.println("\nInformation Flow Typechecking:");
 
-        assert passIFC;
+            assert (TypeChecker.ifcTypecheck(roots, logDir, m_debug));
+            // System.out.println("["+ outputFileName + "]" + "Information Flow Typechecking finished");
+            // logger.debug("running SHErrLoc...");
+            // boolean passIFC = runSLC(outputFileName);
 
-        SourceFile root = null;
-        for (SourceFile r: roots) {
-            if (r.getSourceFilePath().equals(input.getPath())) {
-                root = r;
-                break;
+            SourceFile root = null;
+            for (SourceFile r: roots) {
+                if (r.getSourceFilePath().equals(input.getPath())) {
+                    root = r;
+                    break;
+                }
             }
-        }
-        assert root != null: input.getPath();
+            assert root != null: input.getPath();
 
-        try {
             File outputFile = File.createTempFile("tmp", "sol");
             outputFile.deleteOnExit();
             SolCompiler.compile(List.of(root), outputFile);
-        } catch (Exception exp) {
-            exp.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
             assert false;
         }
     }

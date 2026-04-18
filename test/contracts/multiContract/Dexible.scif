@@ -18,10 +18,13 @@ interface IExchange {
 contract Dexible {
     exception FailedSwap();
 
+    event Swap(IERC20 tokenIn, IERC20 tokenOut, IExchange router, uint amount);
+
     constructor() { super(); }
 
     @public void swap{sender}(IERC20 tokenIn, IERC20 tokenOut, IExchange router, uint amount)
         throws (FailedSwap) {
+        emit Swap(tokenIn, tokenOut, router, amount);
         atomic {
             tokenIn.approveFrom(sender, address(router), amount);
             router.exchange(sender, tokenIn, tokenOut, amount);
@@ -36,6 +39,7 @@ contract Dexible {
             uint{sender} i = 0;
             while (i < tokens.length() - 1) {
                 try {
+                    emit Swap(tokens[i], tokens[i + 1], routers[i], amounts[i]Dexible.scif);
                     swap(tokens[i], tokens[i + 1], routers[i], amounts[i]);
                 } catch (FailedSwap e) {
                     assert false;

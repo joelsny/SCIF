@@ -4,13 +4,13 @@ Contracts in SCIF contain persistent state variables and methods that perform co
 
 ## Structure of a contract
 
-The declaration of a contract starts by specifying its name and label, followed by its body contained in a braces pair.
+The declaration of a contract starts by specifying its name and optional inheritances, followed by its body contained in a braces pair.
 
 The body of a contract may contain the following:
 
 * state variable declarations
 * exception definitions
-* local trust relationship specifications
+* event definitions
 * constructor definitions
 * method definitions.
 
@@ -25,13 +25,8 @@ contract ContractName[this] {
     // exceptions
     exception TransferFailure(address from, address to, uint amount);
 
-    // local trust relationships
-    localtrust {
-        principal high, low;
-        high => low;
-        this => high;
-        owner => this;
-    }
+    // events
+    event Transfer(address to, uint amount);
 
     // constructors
     constructor(address owner) {
@@ -44,6 +39,7 @@ contract ContractName[this] {
         if (balances[msg.sender] >= amount) {
             balances[msg.sender] = balance[msg.sender] - amount;
             balances[to] = balance[to] + amount;
+            emit Transfer(to, amount);
         } else {
             throw TransferFailure(msg.sender, to, amount);
         }
@@ -67,15 +63,6 @@ There are also some built-in exceptions:
 
 * `OutOfGasException`: a method call throws this exception when the current transaction runs out of gas.
 * `RevertException`: `revert` statement reverts all changes in current transaction and throw this exception.
-
-## Local trust relationships
-
-Programmers can declare principals that are not addresses and trust assumptions between principals in `localtrust` clause of a contract.
-
-By specifying `A => B`, the trust relationship that principal `B` trusts principal `A` is put into the local assumptions when typechecking.
-By specifying `A == B`, the trust relationship that principal `B` and principal `A` are mutually trusted is put into the local assumptions when typechecking.
-
-Note that it is the programmers' responsibility to ensure the correctness of these assumptions. Failure to do so might result in security vulnerabilities.
 
 ## Methods
 
@@ -101,16 +88,14 @@ SCIF supports inheritance when defining a contract by using the keyword `extends
 ```scif
 contract B extends A {
     ...
-    @override
-    @public 
-    void foo() {
+    override public void foo() {
         ...
     }
 }
 ```
 
-Like in Java, contract `B` will inherit all state variables, exceptions, and methods from `A`.
-`B` can also override `A`'s method by decorator `override`.
+Like in other object-oriented languages, contract `B`  inherits all state variables, exceptions, and methods from `A`.
+Contract `B` can also override `A`'s method by decorator `override`.
 
 
 ## Interface

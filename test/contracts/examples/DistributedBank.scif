@@ -6,7 +6,7 @@ contract DistributedBank [this] {
     public void deposit(address sender, uint amount) {
 
 
-        endorse(sender, amount, msg.value, BOT => this) if (msg.value >= amount) {
+        endorse(sender, amount, msg.value, BOT => this) when (msg.value >= amount) {
             balances[sender] += amount;
             otherBank.
 

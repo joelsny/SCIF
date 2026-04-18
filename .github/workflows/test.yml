@@ -1,0 +1,27 @@
+name: Gradle Test
+
+on:
+  push:
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+        
+    - uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - uses: gradle/actions/setup-gradle@v4.4.0
+
+    - name: Gradle Test with Wrapper
+      run: ./gradlew --console=plain test

@@ -13,7 +13,6 @@ public class Emit implements Statement{
     public Emit(String eventName, List<Expression> args) {
         this.eventName = eventName;
         this.args = args;
-        System.out.println(args.size());
     }
 
     @Override

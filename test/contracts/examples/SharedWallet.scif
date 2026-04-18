@@ -15,7 +15,7 @@ contract SharedWallet {
     bool{userA ⨅ userB} transfer{userA ⨅ userB -> this; any}
         (final address userA, final address userB, address recipient, uint amount) {
         endorse([from, to, recipient, amount], userA ⨅ userB -> this)
-        if (balances[from][to] >= amount) {
+        when (balances[from][to] >= amount) {
             balances[from][to] -= amount;
             send(recipient, amount);
             return true;

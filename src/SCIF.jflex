@@ -61,6 +61,7 @@ import static parser.sym.*;
         addKeyword("for",     Integer.valueOf(sym.FOR));
         // addKeyword("from",    Integer.valueOf(sym.FROM));
         addKeyword("if",      Integer.valueOf(sym.IF));
+        addKeyword("when",      Integer.valueOf(sym.WHEN));
         addKeyword("import",  Integer.valueOf(sym.IMPORT));
         addKeyword("in",      Integer.valueOf(sym.IN));
         addKeyword("is",      Integer.valueOf(sym.IS));

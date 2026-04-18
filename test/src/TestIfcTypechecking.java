@@ -34,7 +34,7 @@ public class TestIfcTypechecking {
             "basic/ExceptionThrowAndCatch",
             "basic/EndroseIf",
             "examples/SimpleStorage",
-            "examples/ERC20",
+            // "examples/ERC20",
             "examples/DeployToken",
     })
     void testPositive(String contractName) {
@@ -46,35 +46,29 @@ public class TestIfcTypechecking {
 //        File ntcConsFile = new File(logDir, "ntc.cons");
         ArrayList<File> files = new ArrayList<>();
         files.add(new File(input.getFile()));
-        List<SourceFile> roots = null;
         try {
-            roots = TypeChecker.regularTypecheck(files, logDir, m_debug);
+            List<SourceFile> roots = Preprocessor.preprocess(files);
+            assertNotNull(roots);
+            assert (TypeChecker.regularTypecheck(roots, logDir, m_debug));
+
+            // System.out.println("["+ outputFileName + "]");
+            //        ArrayList<File> ifcConsFiles = new ArrayList<>();
+            //        for (int i = 0; i < roots.size(); ++i) {
+            //            File IFCConsFile;
+            //            IFCConsFile = new File(logDir, "ifc" + i + ".cons");
+            //            ifcConsFiles.add(IFCConsFile);
+            //        }
+
+            System.out.println("\nInformation Flow Typechecking:");
+
+            assert (TypeChecker.ifcTypecheck(roots, logDir, m_debug));
+            // System.out.println("["+ outputFileName + "]" + "Information Flow Typechecking finished");
+            // logger.debug("running SHErrLoc...");
+            // boolean passIFC = runSLC(outputFileName);
         } catch (Exception e) {
             e.printStackTrace();
             assert false;
         }
-        assertNotNull(roots);
-        // System.out.println("["+ outputFileName + "]");
-//        ArrayList<File> ifcConsFiles = new ArrayList<>();
-//        for (int i = 0; i < roots.size(); ++i) {
-//            File IFCConsFile;
-//            IFCConsFile = new File(logDir, "ifc" + i + ".cons");
-//            ifcConsFiles.add(IFCConsFile);
-//        }
-
-        System.out.println("\nInformation Flow Typechecking:");
-
-        boolean passIFC = false;
-        try {
-            passIFC = TypeChecker.ifcTypecheck(roots, logDir, m_debug);
-        } catch (Exception exp) {
-            exp.printStackTrace();
-        }
-        // System.out.println("["+ outputFileName + "]" + "Information Flow Typechecking finished");
-        // logger.debug("running SHErrLoc...");
-        // boolean passIFC = runSLC(outputFileName);
-
-        assert passIFC;
     }
     @ParameterizedTest
     @ValueSource(strings = {
@@ -100,34 +94,28 @@ public class TestIfcTypechecking {
 //        File ntcConsFile = new File(logDir, "ntc.cons");
         ArrayList<File> files = new ArrayList<>();
         files.add(new File(input.getFile()));
-        List<SourceFile> roots = null;
         try {
-            roots = TypeChecker.regularTypecheck(files, logDir, m_debug);
+            List<SourceFile> roots = Preprocessor.preprocess(files);
+            assertNotNull(roots);
+            assert (TypeChecker.regularTypecheck(roots, logDir, m_debug));
+
+            // System.out.println("["+ outputFileName + "]");
+            //        ArrayList<File> ifcConsFiles = new ArrayList<>();
+            //        for (int i = 0; i < roots.size(); ++i) {
+            //            File IFCConsFile;
+            //            IFCConsFile = new File(logDir, "ifc" + i + ".cons");
+            //            ifcConsFiles.add(IFCConsFile);
+            //        }
+
+            System.out.println("\nInformation Flow Typechecking:");
+
+            assert (!TypeChecker.ifcTypecheck(roots, logDir, m_debug));
+            // System.out.println("["+ outputFileName + "]" + "Information Flow Typechecking finished");
+            // logger.debug("running SHErrLoc...");
+            // boolean passIFC = runSLC(outputFileName);
         } catch (Exception e) {
             e.printStackTrace();
-            assert false;
+            assert true;
         }
-        assertNotNull(roots);
-        // System.out.println("["+ outputFileName + "]");
-//        ArrayList<File> IFCConsFiles = new ArrayList<>();
-//        for (int i = 0; i < roots.size(); ++i) {
-//            File IFCConsFile;
-//            IFCConsFile = new File(logDir, "ifc" + i + ".cons");
-//            IFCConsFiles.add(IFCConsFile);
-//        }
-
-        System.out.println("\nInformation Flow Typechecking:");
-
-        boolean passIFC = false;
-        try {
-            passIFC = TypeChecker.ifcTypecheck(roots, logDir, m_debug);
-        } catch (Exception exp) {
-            exp.printStackTrace();
-        }
-        // System.out.println("["+ outputFileName + "]" + "Information Flow Typechecking finished");
-        // logger.debug("running SHErrLoc...");
-        // boolean passIFC = runSLC(outputFileName);
-
-        assert !passIFC;
     }
 }

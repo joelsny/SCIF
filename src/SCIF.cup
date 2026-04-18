@@ -118,7 +118,7 @@ terminal AND, ASSERT;
 terminal BREAK, CONTINUE;
 terminal ELSE;//, FROM;
 terminal JOIN, MEET;
-terminal IF, IMPORT, IN, IS, NOT;
+terminal IF, WHEN, IMPORT, IN, IS, NOT;
 terminal OR, RETURN;
 terminal LPAR, RPAR, LSQB, RSQB, SQBPAIR, COLON, COMMA, SEMI;
 terminal PLUS, MINUS, STAR, SLASH, VBAR, AMPER;
@@ -178,6 +178,7 @@ nonterminal String ipt_name;
 nonterminal Statement assert_stmt;
 nonterminal CallStatement call_stmt;
 nonterminal If if_stmt;
+nonterminal If when_stmt;
 nonterminal Statement try_stmt, atomic_stmt;
 nonterminal Statement unchecked_stmt;
 nonterminal Statement while_stmt; //, for_stmt;
@@ -1120,7 +1121,7 @@ emit_stmt ::=
     ;
 
 endorseIf_stmt ::=
-    ENDORSE:x LPAR name_list:exprList COMMA ifLabel:from RIGHT_ARROW ifLabel:to RPAR if_stmt:ifStmt {:
+    ENDORSE:x LPAR name_list:exprList COMMA ifLabel:from RIGHT_ARROW ifLabel:to RPAR when_stmt:ifStmt {:
         EndorseIfStatement statement = new EndorseIfStatement(exprList, from, to, ifStmt);
         RESULT = statement;
         RESULT.setLoc(new CodeLocation(xleft, xright, filename));
@@ -1369,6 +1370,16 @@ suite ::= LEFT_BRACE stmts:a RIGHT_BRACE {:
     :}
     | LEFT_BRACE RIGHT_BRACE {:
         RESULT = new ArrayList<Statement>();
+    :};
+
+when_stmt ::= 
+    WHEN:x LPAR expr:a RPAR suite:b {:
+        RESULT = new If(a, b);
+        RESULT.setLoc(new CodeLocation(xleft, xright, filename));
+    :}
+    | WHEN:x LPAR expr:a RPAR suite:b ELSE suite:c {:
+        RESULT = new If(a, b, c);
+        RESULT.setLoc(new CodeLocation(xleft, xright, filename));
     :};
 
 while_stmt ::=

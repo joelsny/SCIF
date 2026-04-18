@@ -33,7 +33,7 @@ contract Wallet extends BaseContract {
     void withdraw(uint amount) throws (balanceNotEnough, transferFailure) {
 
         endorse(amount, msg.sender, msg.sender -> this)
-        if (balances[msg.sender] >= amount) {
+        when (balances[msg.sender] >= amount) {
             lock(this) {
                 try {
                     send(msg.sender, amount);
@@ -50,7 +50,7 @@ contract Wallet extends BaseContract {
     @public
     void withdraw2(uint amount) throws (balanceNotEnough, transferFailure) {
 
-        endorse(amount, msg.sender, msg.sender -> this) if (balances[msg.sender] >= amount) {
+        endorse(amount, msg.sender, msg.sender -> this) when (balances[msg.sender] >= amount) {
             if (msg.sender => this) {
                 try {
                     send(msg.sender, amount);

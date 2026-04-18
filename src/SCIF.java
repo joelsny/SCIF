@@ -174,6 +174,7 @@ public class SCIF implements Callable<Integer> {
             }
             // logger.debug("finished typecheck, compiling...");
             if (roots == null) {
+                // TODO(steph): use a more informative and helpful way
                 return 1;
             }
             File solFile;

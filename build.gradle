@@ -82,6 +82,10 @@ def fatJar = tasks.register("fatJar", Jar) {
 
 test {
     useJUnitPlatform()
+
+    testLogging {
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+  }
 }
 
 artifacts {

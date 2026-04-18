@@ -53,13 +53,14 @@ public class TestRegularTypechecking {
         ArrayList<File> files = new ArrayList<>();
         files.add(new File(input.getFile()));
 
-        List<SourceFile> roots = null;
         try {
-            roots = TypeChecker.regularTypecheck(files, logDir, m_debug);
+            List<SourceFile> roots = Preprocessor.preprocess(files);
+            assertNotNull(roots);
+            assert (TypeChecker.regularTypecheck(roots, logDir, m_debug));
         } catch (Exception e) {
             e.printStackTrace();
+            assert false;
         }
-        assertNotNull(roots);
     }
 
     @ParameterizedTest
@@ -86,17 +87,15 @@ public class TestRegularTypechecking {
 //        File NTCConsFile = new File(logDir, "ntc.cons");
         ArrayList<File> files = new ArrayList<>();
         files.add(new File(input.getFile()));
-        List<SourceFile> roots = null;
         try {
-            roots = TypeChecker.regularTypecheck(files, logDir, m_debug);
-        } catch (Exception exp) {
-            exp.printStackTrace();
-        } catch (AssertionError err) {
-            err.printStackTrace();
+            List<SourceFile> roots = Preprocessor.preprocess(files);
+            assert (roots == null || !TypeChecker.regularTypecheck(roots, logDir, m_debug));
+        } catch (AssertionError e) {
+            e.printStackTrace();
+            assert true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            assert true;
         }
-        if (roots != null) {
-            assert false;
-        }
-        assertNull(roots);
     }
 }

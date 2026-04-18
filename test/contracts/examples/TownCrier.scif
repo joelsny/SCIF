@@ -15,7 +15,7 @@ contract TownCrier {
 
     @public
     void request(address _callback) throw NotEnoughPayment() {
-        endorse(sender, _callback, BOT => this) if (value >= FEE) {
+        endorse(sender, _callback, BOT => this) when (value >= FEE) {
             requester = sender;
             callback = _callback;
         } else {

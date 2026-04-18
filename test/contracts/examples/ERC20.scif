@@ -1,6 +1,6 @@
-import "./IERC20.scif";
+// import "./IERC20.scif";
 
-contract ERC20 implements IERC20 {
+contract ERC20 {
     map(address, uint) balances;
     map(address owner, map(address, uint{owner}){owner}) allowances;
     constructor() { super(); }
@@ -15,7 +15,7 @@ contract ERC20 implements IERC20 {
     bool{this} transfer{from -> this}(final address from, address to, uint amount) {
     // bool transfer{from -> this; 1}(final address from, address to, uint amount) {
         endorse([from, to, amount], from -> this)
-        if (balances[from] >= amount) {
+        when (balances[from] >= amount) {
             balances[from] -= amount;
             balances[to] += amount;
             return true;
@@ -27,7 +27,7 @@ contract ERC20 implements IERC20 {
     @public
     bool{from} transferAllowed{sender -> from; any}(final address from, address to, uint amount) {
         endorse([from, to, amount], sender -> from)
-        if (allowances[from][sender] >= amount) {
+        when (allowances[from][sender] >= amount) {
             if (transfer(from, to, amount)) {
                 allowances[from][sender] -= amount;
                 return true;
@@ -35,6 +35,34 @@ contract ERC20 implements IERC20 {
         }
         return false;
     }
+
+    // @public
+    // bool transferAllowed{sender->from; sender}(final address from, address to, uint amount) {
+    //     endorse([from, to, amount], sender -> from)
+    //     // address _from = endorse(from, sender -> from);
+    //     // final address __from = _from;
+    //     // address _to = endorse(to, sender -> from);
+    //     // uint _amount = endorse(amount, sender -> from);
+    //     if (allowances[from][sender] >= amount) {
+    //         if (transfer(from, to, amount)) {
+    //             allowances[from][sender] -= amount;
+    //             // return true;
+    //         }
+    //     }
+    //     // return false;
+    // }
+
+    // @public void transferFrom{sender -> from; sender}(final address from, address to, uint val) {
+    //     endorse([from, to, val], sender -> from)
+    //     if (_allowances[from][sender] >= val) {
+    //         transfer(from, to, val);
+    //         unchecked {
+    //             _allowances[from][sender] -= val;
+    //         }
+    //     } else {
+    //         assert false;
+    //     }
+    // }
 
     @public
     void deposit() {

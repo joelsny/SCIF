@@ -1,7 +1,7 @@
 contract ConfusedCentralBank {
 
     void depositAndInformLocalBank(final C localBank) {
-            endorse(localBank, any -> this) if (value >= threshold) {
+            endorse(localBank, any -> this) when (value >= threshold) {
                     localBank.confirm(sender);
                     //...
             }

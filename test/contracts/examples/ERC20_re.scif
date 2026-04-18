@@ -18,7 +18,7 @@ contract ERC20 implements IERC20 {
     // bool transfer{from -> this; 1}(final address from, address to, uint amount) {
         result = false;
         endorse([from, to, amount], from -> this)
-        if (balances[from] >= amount) {
+        when (balances[from] >= amount) {
             balances[from] -= amount;
             balances[to] += amount;
             result = true;
@@ -35,7 +35,7 @@ contract ERC20 implements IERC20 {
     // bool transfer{from -> this; 1}(final address from, address to, uint amount) {
         result = false;
         endorse([from, to, amount], from -> this)
-        if (balances[from] >= amount) {
+        when (balances[from] >= amount) {
             balances[from] -= amount;
             balances[to] += amount;
             result = true;
@@ -55,7 +55,7 @@ contract ERC20 implements IERC20 {
     @public
     bool{from} transferAllowed{any -> from; any}(final ITokenHolder from, ITokenHolder to, uint amount) {
         endorse([from, to, amount], any -> from)
-        if (allowances[from][sender] >= amount) {
+        when (allowances[from][sender] >= amount) {
             if (transfer(from, to, amount)) {
                 allowances[from][sender] -= amount;
                 return true;
@@ -66,7 +66,7 @@ contract ERC20 implements IERC20 {
     @public
     bool{from} transferAllowed{sender -> from; any}(final ITokenHolder from, ITokenHolder to, uint amount) {
         endorse([from, to, amount], sender -> from)
-        if (allowances[from][sender] >= amount) {
+        when (allowances[from][sender] >= amount) {
             if (transfer(from, to, amount)) {
                 allowances[from][sender] -= amount;
                 return true;

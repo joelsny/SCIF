@@ -86,7 +86,7 @@ public class TypeChecker {
                 outputFile, false, null)) {
 //            return roots;
             // TODO(steph) why return roots??
-            return false;
+            return true;
         }
         try {
             if (DEBUG) {

@@ -6,7 +6,7 @@ SCIF is statically typed, meaning that each variable and method type needs to be
 
 * `bool`: Boolean values `true` or `false`.
 * `uint`: Unsigned integers whose possible values are between 0 and 2<sup>256</sup> - 1.
-* `byte`: Byte values. Possible values are between 0 and 2<sup>8</sup> - 1.
+* `bytes`: Byte array. 
 * `address`: Address of an Ethereum account, represented as 20 bytes.
 
 ## Arrays
@@ -31,7 +31,7 @@ The values in a map `m` with key `k` is accessed through the expression `m[k]`.
     TODO: add detailed explanations of classes.
  -->
 
-* Contract Types: Every defined contract can be explicitly converted from and to the `address` type.
+Contract Types: Every defined contract can be explicitly converted from and to the `address` type.
 
 ## Labels
 

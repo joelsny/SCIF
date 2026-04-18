@@ -28,18 +28,27 @@ SCIF.
   -V, --version             Print version information and exit.
 ```
 
-
-## Build Dependencies
-
-* [JFlex](https://jflex.de/)
-* Java 21
-* Ant
-* Gradle
+## Build from the JAR (Recommended)
 
 Compile a Wallet example to `./tmp.sol`:
 
 ```console
 java -ea -jar SCIF.jar -c test/contracts/ifcTypechecking/Wallet_lock_exception.scif -o ./tmp.sol
+```
+
+## Build from Source
+
+Dependency:
+* [JFlex](https://jflex.de/)
+* Java 21
+* Ant
+* Gradle
+
+```console
+git clone --recurse-submodules https://github.com/apl-cornell/SCIF.git
+cd SCIF
+./gradlew build
+./scif -c test/contracts/ifcTypechecking/Wallet_lock_exception.scif -o ./tmp.sol
 ```
 
 ## Documentation

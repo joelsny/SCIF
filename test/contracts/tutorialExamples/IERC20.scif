@@ -1,0 +1,9 @@
+interface IERC20 {
+    exception ERC20InsufficientBalance(address owner, uint cur, uint needed);
+    exception ERC20InsufficientAllowance(address owner, uint cur, uint needed);
+    @public uint balanceOf(address account);
+    @public void approve{sender}(address allowed, uint amount);
+    @public void approveFrom{from}(final address from, address spender, uint val);
+    @public void transfer{from -> this}(final address from, address to, uint amount) throws (ERC20InsufficientBalance{this});
+    @public void transferFrom{sender -> from; sender}(final address from, address to, uint amount) throws (ERC20InsufficientAllowance{this}, ERC20InsufficientBalance{this});
+}

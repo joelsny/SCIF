@@ -63,7 +63,7 @@ public class Utils {
     public static final String PATH_TO_BASECONTRACTCENTRALIZED = "BaseContractCentralized";
 
     public static final String ERROR_MESSAGE_LOCK_IN_NONLAST_OPERATION = "Static reentrancy locks should be maintained except during the last operation";
-    public static final String ERROR_MESSAGE_PC_IN_NONLAST_OPERATION = "Pc should be maintained except during the last operation";
+    public static final String ERROR_MESSAGE_PC_IN_NONLAST_OPERATION = "PC should be maintained except during the last operation";
 //    public static final String ERROR_MESSAGE_LOCK_IN_LAST_OPERATION = "The operation at tail position should respect the final reentrancy lock label";
 
     public static final String DEBUG_UNKNOWN_CONTRACT_NAME = "UNKNOWN";
@@ -689,7 +689,7 @@ public class Utils {
         env.addTrustConstraint(
                 new Constraint(new Inequality(outContext.pc, endContext.pc), env.hypothesis(),
                         location, env.curContractSym().getName(),
-                        "normal-termination control flow of final sub-statement must flow to that of parent statement"));
+                        "Normal-termination control flow of final sub-statement must flow to that of parent statement"));
     }
 
     public static ExceptionTypeSym getNormalPathException() {

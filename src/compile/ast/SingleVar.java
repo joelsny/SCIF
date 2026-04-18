@@ -21,7 +21,7 @@ public class SingleVar extends Expression {
     private String translateBuiltInVars(String name) {
         if (name.equals(Utils.UINTMAX)) {
             return "type(uint256).max";
-        } else  if (name.equals(Utils.NOW)) {
+        } else if (name.equals(Utils.NOW)) {
             return "block.timestamp";
         }
         return name;

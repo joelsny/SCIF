@@ -48,12 +48,12 @@ export default async () => defineConfig({
                 items: [
                     {
                         text: 'Getting Started',
-                        link: '/Introduction/getting-started'
+                        link: '/Introduction/Your-First-SCIF-Contract'
                     },
-                    {
-                        text: 'Layout of a SCIF source file',
-                        link: '/Introduction/layout-of-a-scif-source-file'
-                    },
+                    // {
+                    //     text: 'Layout of a SCIF source file',
+                    //     link: '/Introduction/layout-of-a-scif-source-file'
+                    // },
                     {
                         text: 'SCIF by Example',
                         link: '/Introduction/scif-by-example'

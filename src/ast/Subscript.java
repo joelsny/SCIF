@@ -78,6 +78,7 @@ public class Subscript extends TrailerExpr {
                 validIndex = false;
             }
             if (!validIndex) {
+                // TODO(steph): fix exceptions
                 throw new RuntimeException("Must use a final address/contract to access a dependent map: " + ((Name) index).id + " at " + location.errString());
             }
             return now;

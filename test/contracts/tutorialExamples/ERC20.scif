@@ -50,13 +50,12 @@ contract ERC20 implements IERC20 {
     }
 
     @public void transfer{from -> this}(final address from, address to, uint val) throws (ERC20InsufficientBalance{this}) {
-        uint{from} fromBalance = _balances[from];
-        endorse([from, to, val, fromBalance], from -> this)
-        when (fromBalance >= val) {
-            _balances[from] = fromBalance - val;
-            _balances[to] += val;
+        endorse([from, to, val], from -> this)
+        when (_balances[from] >= val) {
+                _balances[from] -= val;
+                _balances[to] += val;
         } else {
-            throw ERC20InsufficientBalance(from, fromBalance, val);
+            throw ERC20InsufficientBalance(from, _balances[from], val);
         }
     }
 
@@ -65,24 +64,12 @@ contract ERC20 implements IERC20 {
     }
 
     @public void transferFrom{sender -> from; sender}(final address from, address to, uint val) throws (ERC20InsufficientAllowance{this}, ERC20InsufficientBalance{this}) {
-        uint{from} currentAllowance = _allowances[from][sender];
         endorse([from, to, val], sender -> from)
-        when (currentAllowance >= val) {
+        when (_allowances[from][sender] >= val) {
             transfer(from, to, val);
-            _allowances[from][sender] = currentAllowance - val;
+            _allowances[from][sender] -= val;
         } else {
-            throw ERC20InsufficientAllowance(to, currentAllowance, val);
-        }
-    }
-
-    void _spendAllowance{owner}(final address owner, address spender, uint val) throws (ERC20InsufficientAllowance) {
-        uint{owner} currentAllowance;
-        currentAllowance = allowance(owner, spender);
-        if (currentAllowance != UINT_MAX) {
-            if (currentAllowance < val) {
-                throw ERC20InsufficientAllowance(spender, currentAllowance, val);
-            }
-            _allowances[owner][spender] = currentAllowance - val;
+            throw ERC20InsufficientAllowance(to, _allowances[from][sender], val);
         }
     }
 }

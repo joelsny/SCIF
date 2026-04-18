@@ -333,6 +333,7 @@ public class Contract extends TopLayerNode {
         return rtn;
     }
 
+    // TODO(steph): fix asserts
     void checkInterfaceSignature(String implementsContractName, Map<String, Interface> interfaceMap) {
         Interface itrface = interfaceMap.get(implementsContractName);
         assert itrface != null : "interface contract not found: " + implementsContractName + " in " + contractName;

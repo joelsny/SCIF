@@ -66,7 +66,7 @@ contract EthCrossChainManager {
         // Parse header and convit the public keys into nextBookKeeper and compare it with header.nextBookKeeper to verify the validity of signature
         address nextBookkeeper = cutils.verifyPubkey(keepers);
         endorse([header], sender->this)
-        if (header.nextBookkeeper == nextBookkeeper) {
+        when (header.nextBookkeeper == nextBookkeeper) {
             // Record current epoch start height and public keys (by storing them in address format)
             eccd.putCurEpochStartHeight(header.height);
             eccd.putCurEpochConPubKeys(keepers);
@@ -84,7 +84,7 @@ contract EthCrossChainManager {
 
         // Verify signature of rawHeader comes from pubKeyList
         endorse([header, polyChainBKs], sender -> this)
-        if ((header.height > curEpochStartHeight) &&
+        when ((header.height > curEpochStartHeight) &&
             (header.nextBookkeeper != address(0)) &&
             (cutils.verifySig(header, sigList, polyChainBKs, polyChainBKs.length() - (polyChainBKs.length() - 1) / 3))) {
 

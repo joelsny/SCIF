@@ -94,6 +94,7 @@ public class FunctionDef extends FunctionSig {
                 stmt.genTypeConstraints(env, now);
             }
         if (isConstructor()) {
+            // TODO(steph): fix assert
             assert env.superCalled() : "constructor of super contract is not called in the constructor of " + env.currentSourceFileFullName();
             env.leaveConstructor();
         }

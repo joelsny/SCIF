@@ -40,7 +40,7 @@ contract SysEscrow {
     ) {
         Escrow currentEscrow = escrows[_tradeHash];
         endorse([_seller, _buyer, _paymentWindowInSeconds], any -> this)
-        if (value >= MinDeposit && !(currentEscrow.exists)) {
+        when (value >= MinDeposit && !(currentEscrow.exists)) {
             uint _buyerCanCancelAfter =  now + _paymentWindowInSeconds;
             escrows[_tradeHash] = new Escrow(true, _seller, _buyer, value, _buyerCanCancelAfter, false, false);
         }
