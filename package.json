@@ -7,7 +7,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^18.8.3",
-    "vitepress": "^1.0.0-alpha.15",
+    "vitepress": "^1.6.4",
     "vue": "^3.2.39"
   },
   "scripts": {
